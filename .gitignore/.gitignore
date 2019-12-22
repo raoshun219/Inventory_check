@@ -1,0 +1,60 @@
+Dim wb As Workbook
+Const connectionStr = "Provider=sqloledb;" & _
+                      "Data Source=G08CNXNFCH1128\PFS_SVN;" & _
+                      "Initial Catalog=TEST_RAO;" & _
+                      "User ID=sa;" & _
+                      "Password=PRO_SVN1;"
+
+
+Sub read_data()
+
+    Dim sqlSelectStr, sqlSelectNameStr As String
+   
+    Set con = CreateObject("ADODB.Connection")
+    con.Open (connectionStr)
+    On Error GoTo Except
+       
+    sqlSelectStr = "SELECT NO, ITEM_NAME, UNITE_PRICE, AMOUNT_LAST_MONTH, MONEY_LAST_MONTH, AMOUNT_THIS_MONTH, MONEY_THIS_MONTH FROM INVENTORY_CHECK ORDER BY NO "
+    Set rstAll = con.Execute(sqlSelectStr)
+    sqlSelectNameStr = "SELECT DISTINCT(ITEM_NAME) as item FROM INVENTORY_CHECK"
+    Set rstName = con.Execute(sqlSelectNameStr)
+   
+    With Sheet5
+        .Range("A3:A100:G3:G100").Clear
+        .Range("I3:I100:K3:K100").Clear
+        .Range("A3").CopyFromRecordset rstAll
+        .Range("I3").CopyFromRecordset rstName
+    End With
+    con.Close
+    Set con = Nothing
+    Set rstAll = Nothing
+    Set rstName = Nothing
+    MsgBox "Processing completed."
+    Exit Sub
+Except:
+    con.RollbackTrans
+    con.Close
+    Set con = Nothing
+    MsgBox "Processing failed."
+    MsgBox Err.Number & ":" & Err.Description
+
+End Sub
+
+Sub inventory_check()
+  Dim rng As Range, rngs As Range, k%
+  k = 2
+  For Each rng In [I3:I100]
+    For Each rngs In [J3:J100]
+      If rngs = rng Then
+        GoTo 100
+      End If
+    Next rngs
+    k = k + 1
+    Cells(k, "K") = rng
+100:
+Next rng
+End Sub
+
+Sub clear_all()
+  Sheet5.Range("A3:A100:K3:K100").Clear
+End Sub
